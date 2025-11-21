@@ -1,0 +1,69 @@
+---
+#Från uppgift 5 och 6: Installerar och startar webservern nginx-
+- name: Ensure nginx is installed
+  ansible.builtin.package:
+    name: nginx
+    state: present
+
+- name: Ensure nginx service is started and enabled
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true
+
+#Skapar Conf.d katalog där mina virtuella host filer ska ligga.
+- name: Ensure /etc/nginx/conf.d directory exists
+  ansible.builtin.file:
+    path: /etc/nginx/conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+#Uppgift: 10 vhost-konfigurattion från template.
+- name: Ensure the nginx configuration is updated for example.internal
+  ansible.builtin.template:
+    src: example.internal.conf.j2
+    dest: /etc/nginx/conf.d/example.internal.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nginx
+
+#HTTPS-konfiguration, separat fil.
+- name: Copy HTTPS config file
+  ansible.builtin.copy:
+    src: https.conf
+    dest: /etc/nginx/conf.d/https.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nginx
+
+#Skapar web root katalog och index.html fil.
+- name: Ensure web root directory exists
+  ansible.builtin.file:
+    path: /var/www/example.internal/html/
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+#Lägger ut startsidan index.html.
+- name: Deploy index.html
+  ansible.builtin.copy:
+    src: index.html
+    dest: /var/www/example.internal/html/index.html
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nginx
+
+#Uppgift 11: Skapar användare med loop från en lista.
+- name: Create users with loop
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    state: present
+    groups: "{{ item.groups | join(',') }}"
+    append: false
+  loop: "{{ users }}"

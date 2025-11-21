@@ -1,0 +1,37 @@
+---
+# 17-sudo.yml: Säkerställ deploy user har sudo acces med lösen.
+- name: fix sudo for deploy user
+  hosts: all
+  become: true
+
+  vars:
+  #Hash genererad lösen med kommando openssl passwd -6.
+    deploy_password_hash: $6$MUnZ4KIBjSh1ein3$4OKI9rAUC9/8iw2uqZMnMK/YaLo7mmqMBna42dztMgl./UfvKveJanpAYGNnNL2Ltv07FSCu.82PklGF59wQf/
+
+  tasks:
+  #Sätter lösen för deploy användaren.
+    - name: set password for deploy
+      user:
+        name: deploy
+        password: "{{ deploy_password_hash }}"
+
+#ser till att sudoers.d katalogen finns och att deploy user har sudo rättigheter med lösen.
+    - name: make sure /etc/sudoers.d exists
+      file:
+        path: /etc/sudoers.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0750"
+
+#byt ut eller skapa sudoers regel för deploy user så att lösen krävs.
+    - name: ensure sudoers rule for deploy requires password
+      lineinfile:
+        path: /etc/sudoers.d/deploy
+        create: true
+        owner: root
+        group: root
+        mode: "0440"
+        regexp: "^deploy "
+        line: "deploy ALL=(ALL) ALL"
+        validate: "visudo -cf %s"

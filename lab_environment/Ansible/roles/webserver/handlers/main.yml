@@ -1,0 +1,7 @@
+---
+#Handler för att starta om nginx när konfigurationen ändras.
+- name: Restart nginx
+  ansible.builtin.service:
+    name: nginx
+    state: restarted
+

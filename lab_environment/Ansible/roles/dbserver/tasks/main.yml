@@ -1,0 +1,79 @@
+---
+# Från 07-mariadb.yml: Installera och starta om MariaDB-server
+
+- name: Ensure MariaDB-server is installed.
+  ansible.builtin.package:
+    name: mariadb-server
+    state: present
+
+- name: Ensure MariaDB service is started and enabled.
+  ansible.builtin.service:
+    name: mariadb
+    state: started
+    enabled: true
+
+# Kollar att tjänsten körs.
+- name: Check if MariaDB is running
+  ansible.builtin.command: systemctl is-active mariadb
+  register: mariadb_status
+  changed_when: false
+
+- name: Show MariaDB status
+  ansible.builtin.debug:
+    var: mariadb_status.stdout
+
+# Från 08-mariadb-password.yml : Skapa databas och användare med lösenord.
+
+- name: Ensure MariaDB-server is installed.
+  ansible.builtin.package:
+    name: mariadb-server
+    state: present
+
+- name: Ensure PyMySQL is installed.
+  ansible.builtin.package:
+    name: python3-PyMySQL
+    state: present
+
+- name: Ensure MariaDB service is started and enabled.
+  ansible.builtin.service:
+    name: mariadb
+    state: started
+    enabled: true
+
+- name: Create database webappdb.
+  community.mysql.mysql_db:
+    name: webappdb
+    state: present
+    login_unix_socket: /var/lib/mysql/mysql.sock
+
+# Skapa användare med privilegier på databasen.
+- name: Create user webappuser with privileges on webappdb.
+  community.mysql.mysql_user:
+    name: webappuser
+    password: "{{ mysql_webapp_password }}"
+    priv: 'webappdb.*:ALL'
+    state: present
+    login_unix_socket: /var/lib/mysql/mysql.sock
+
+# Från 11-copy-md.yml: skapar deploy-användare och kopierar .md-filer
+
+- name: Ensure 'deploy' user exists (with home)
+  ansible.builtin.user:
+    name: deploy
+    state: present
+    create_home: true
+
+#Här använder vi fileglob för att lista alla .md-filer i en katalog och kopiera dem till deploy-användarens hemkatalog.
+- name: Display paths of all .md files in dir
+  ansible.builtin.debug:
+    msg: "{{ lookup('ansible.builtin.fileglob', 'files/*.md') }}"
+
+- name: Copy each file over that matches the given pattern
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/home/deploy/"
+    owner: "deploy"
+    group: "deploy"
+    mode: '0600'
+  with_fileglob:
+    - "files/*.md"

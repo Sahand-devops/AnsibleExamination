@@ -1,0 +1,82 @@
+---
+- name: security compliance checks
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: gather package facts
+      package_facts:
+
+    - name: check telnet-server
+      assert:
+        that: "'telnet-server' not in ansible_facts.packages"
+        fail_msg: "telnet-server is installed"
+        success_msg: "telnet-server is not installed"
+
+    - name: check rsh-server
+      assert:
+        that: "'rsh-server' not in ansible_facts.packages"
+        fail_msg: "rsh-server is installed"
+        success_msg: "rsh-server is not installed"
+
+    - name: check ypserv
+      assert:
+        that: "'ypserv' not in ansible_facts.packages"
+        fail_msg: "ypserv is installed"
+        success_msg: "ypserv is not installed"
+
+    - name: check tftp-server
+      assert:
+        that: "'tftp-server' not in ansible_facts.packages"
+        fail_msg: "tftp-server is installed"
+        success_msg: "tftp-server is not installed"
+
+    - name: check vsftpd
+      assert:
+        that: "'vsftpd' not in ansible_facts.packages"
+        fail_msg: "vsftpd is installed"
+        success_msg: "vsftpd is not installed"
+
+    - name: check time sync package
+      assert:
+        that:
+          - "'chrony' in ansible_facts.packages or 'systemd-timesyncd' in ansible_facts.packages"
+        fail_msg: "no time sync package found"
+        success_msg: "time sync package found"
+
+#Bara root ska ha uid 0.
+    - name: get users with uid 0
+      shell: "awk -F: '$3 == 0 {print $1}' /etc/passwd"
+      register: uid0_users
+      changed_when: false
+
+    - name: check uid 0 users
+      assert:
+        that: uid0_users.stdout.strip() == "root"
+        fail_msg: "more than one user with uid 0: {{ uid0_users.stdout }}"
+        success_msg: "only root has uid 0"
+
+# Kontrollera ägarskap och rättigheter för /etc/shadow
+    - name: stat /etc/shadow
+      stat:
+        path: /etc/shadow
+      register: shadow_stat
+
+    - name: check /etc/shadow owner
+      assert:
+        that: shadow_stat.stat.uid == 0
+        fail_msg: "/etc/shadow is not owned by root"
+        success_msg: "/etc/shadow is owned by root"
+
+    - name: check /etc/shadow mode
+      assert:
+        that: shadow_stat.stat.mode in ["0000", "0400"]
+        fail_msg: "/etc/shadow has bad mode: {{ shadow_stat.stat.mode }}"
+        success_msg: "/etc/shadow mode is ok"
+
+    - name: check firewall package
+      assert:
+        that:
+          - "'firewalld' in ansible_facts.packages or 'nftables' in ansible_facts.packages"
+        fail_msg: "no firewall package found"
+        success_msg: "firewall package installed"
