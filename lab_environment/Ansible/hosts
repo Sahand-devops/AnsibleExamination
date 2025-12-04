@@ -1,9 +1,9 @@
-[all:vars]
-ansible_user=deploy
-ansible_ssh_private_key_file= /home/administrator/Config.mgm/sahandautomatisering/lab_environment/deploy_key
+[web]
+webserver ansible_host=192.168.121.16 ansible_user=vagrant ansible_ssh_private_key_file=/home/administrator/Config.mgm/sahandautomatisering/lab_environment/.vagrant/machines/webserver/libvirt/private_key
 
 [db]
-192.168.121.131
+dbserver ansible_host=192.168.121.216 ansible_user=vagrant ansible_ssh_private_key_file=/home/administrator/Config.mgm/sahandautomatisering/lab_environment/.vagrant/machines/dbserver/libvirt/private_key
 
-[web]
-192.168.121.112
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'

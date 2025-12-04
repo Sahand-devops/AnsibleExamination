@@ -5,12 +5,6 @@
     name: nginx
     state: present
 
-- name: Ensure nginx service is started and enabled
-  ansible.builtin.service:
-    name: nginx
-    state: started
-    enabled: true
-
 #Skapar Conf.d katalog där mina virtuella host filer ska ligga.
 - name: Ensure /etc/nginx/conf.d directory exists
   ansible.builtin.file:
@@ -19,26 +13,6 @@
     owner: root
     group: root
     mode: '0755'
-
-#Uppgift: 10 vhost-konfigurattion från template.
-- name: Ensure the nginx configuration is updated for example.internal
-  ansible.builtin.template:
-    src: example.internal.conf.j2
-    dest: /etc/nginx/conf.d/example.internal.conf
-    owner: root
-    group: root
-    mode: '0644'
-  notify: Restart nginx
-
-#HTTPS-konfiguration, separat fil.
-- name: Copy HTTPS config file
-  ansible.builtin.copy:
-    src: https.conf
-    dest: /etc/nginx/conf.d/https.conf
-    owner: root
-    group: root
-    mode: '0644'
-  notify: Restart nginx
 
 #Skapar web root katalog och index.html fil.
 - name: Ensure web root directory exists
@@ -58,6 +32,31 @@
     group: root
     mode: '0644'
   notify: Restart nginx
+
+#Uppgift: 10 vhost-konfigurattion från template.
+- name: Ensure the nginx configuration is updated for example.internal
+  ansible.builtin.template:
+    src: example.internal.conf.j2
+    dest: /etc/nginx/conf.d/example.internal.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nginx
+
+#HTTPS-konfiguration, separat fil.
+- name: Copy HTTPS config file (disabled so it does not override real vhost)
+  ansible.builtin.copy:
+    src: https.conf
+    dest: /etc/nginx/conf.d/https.conf.disabled
+    owner: root
+    group: root
+    mode: '0644'
+
+#Startar och aktiverar nginx — körs EFTER att alla config-filer är på plats.
+- name: Ensure nginx is enabled
+  ansible.builtin.service:
+    name: nginx
+    enabled: true
 
 #Uppgift 11: Skapar användare med loop från en lista.
 - name: Create users with loop

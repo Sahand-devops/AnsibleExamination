@@ -1,7 +1,7 @@
 ---
-#Handler för att starta om nginx när konfigurationen ändras.
+#Kontrollerar nginx config innan reload
 - name: Restart nginx
-  ansible.builtin.service:
-    name: nginx
-    state: restarted
-
+  ansible.builtin.shell: |
+    nginx -t && systemctl reload nginx
+  args:
+    warn: false
