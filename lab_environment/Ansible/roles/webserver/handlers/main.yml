@@ -1,7 +1,6 @@
 ---
-#Kontrollerar nginx config innan reload
+# Kontrollerar nginx config innan reload
 - name: Restart nginx
   ansible.builtin.shell: |
     nginx -t && systemctl reload nginx
-  args:
-    warn: false
+  become: yes
